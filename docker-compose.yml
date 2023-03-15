@@ -1,0 +1,58 @@
+version: "3.9"
+networks:
+  backend:
+    name: custom_backend
+    driver: bridge
+services:
+    web:
+        image: nginx:latest
+        ports:
+            - "80:80"
+            - "443:443"
+
+        volumes:
+            - ./:/var/www/html
+            - ./default.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - php-fpm74
+            - php-fpm82
+            - mariadb
+
+    php-fpm74:
+        build: php-fpm/7.4
+        volumes:
+            - ./:/var/www/html
+        depends_on:
+            - mariadb
+
+    php-fpm82:
+        build: php-fpm/8.2
+        volumes:
+            - ./:/var/www/html
+        depends_on:
+            - mariadb
+
+    mariadb:
+        image: mariadb
+        environment:
+            MYSQL_ROOT_PASSWORD: password
+            MYSQL_DATABASE: mydatabase
+            MYSQL_USER: user
+            MYSQL_PASSWORD: password
+        volumes:
+            - ./data/mariadb:/var/lib/mysql
+        ports:
+            - "3306:3306"
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin:latest
+        ports:
+            - 8080:80
+        environment:
+            PMA_HOST: mariadb
+        depends_on:
+            - mariadb
+    redis:
+        image: bitnami/redis:latest
+        environment:
+            - ALLOW_EMPTY_PASSWORD=yes
